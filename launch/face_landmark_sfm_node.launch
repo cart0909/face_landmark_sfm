@@ -9,6 +9,11 @@
     <arg name="bag_file" default="/catkin_ws/carl.bag"/>
 
     <node name="face_landmark_sfm" pkg="face_landmark_sfm" type="face_landmark_sfm_node" output="screen" args="$(arg bag_file)">
+        <param name="width" type="double" value="$(arg width)"/>
+        <param name="height" type="double" value="$(arg height)"/>
         <param name="fx" type="double" value="$(arg fx)"/>
+        <param name="fy" type="double" value="$(arg fy)"/>
+        <param name="cx" type="double" value="$(arg cx)"/>
+        <param name="cy" type="double" value="$(arg cy)"/>
     </node>
 </launch>

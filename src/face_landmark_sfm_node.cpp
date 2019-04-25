@@ -12,6 +12,15 @@
 
 class DataMgr {
 public:
+    void ReadParam(const ros::NodeHandle& nh) {
+        nh.getParam("fx", fx);
+        nh.getParam("fy", fy);
+        nh.getParam("cx", cx);
+        nh.getParam("cy", cy);
+        nh.getParam("width", width);
+        nh.getParam("height", height);
+    }
+
     void Callback(const sensor_msgs::ImageConstPtr& img_msg,
                   const sensor_msgs::PointCloud2ConstPtr& lm_msg)
     {
@@ -33,7 +42,8 @@ public:
 
     std::vector<cv::Mat> v_img;
     std::vector<std::vector<cv::Point2f>> v_landmarks;
-    cv::Mat K, D;
+    double fx, fy, cx, cy;
+    int width, height;
     // FaceSfm
 };
 
@@ -47,8 +57,11 @@ public:
 };
 
 int main(int argc, char** argv) {
-    ros::Time::init();
+    ros::init(argc, argv, "face_landmark_sfm_node");
+    ros::NodeHandle nh("~");
     DataMgr data_mgr;
+    data_mgr.ReadParam(nh);
+
     rosbag::Bag bag;
     bag.open(argv[1], rosbag::bagmode::Read);
 
