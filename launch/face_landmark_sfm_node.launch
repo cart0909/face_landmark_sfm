@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<launch>
+    <arg name="width" default="640"/>
+    <arg name="height" default="480"/>
+    <arg name="fx" default="626.54488961"/>
+    <arg name="fy" default="629.73129574"/>
+    <arg name="cx" default="322.95335308"/>
+    <arg name="cy" default="231.58177416"/>
+    <arg name="bag_file" default="/catkin_ws/carl.bag"/>
+
+    <node name="face_landmark_sfm" pkg="face_landmark_sfm" type="face_landmark_sfm_node" output="screen" args="$(arg bag_file)">
+        <param name="fx" type="double" value="$(arg fx)"/>
+    </node>
+</launch>
