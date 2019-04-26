@@ -147,6 +147,9 @@ include_directories(
 add_executable(${PROJECT_NAME}_node
 src/face_landmark_sfm_node.cpp
 src/local_parameterization.cpp
+src/factor.cpp
+src/face_sfm.cpp
+src/camera.cpp
 )
 
 ## Rename C++ executable without prefix
