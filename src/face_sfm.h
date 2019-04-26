@@ -28,7 +28,7 @@ public:
     void Process(const std::vector<cv::Mat>& v_img, const std::vector<std::vector<Eigen::Vector2d>>& v_landmarks);
     void InitGraph();
     void GlobalBA();
-private:
+
     std::vector<Frame> frames;
     std::vector<Landmark> landmarks;
     std::shared_ptr<CameraBase> camera;

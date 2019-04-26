@@ -24,4 +24,6 @@
         <param name="p1" type="double" value="$(arg p1)"/>
         <param name="p2" type="double" value="$(arg p2)"/>
     </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find face_landmark_sfm)/rviz/face_sfm.rviz"/>
 </launch>

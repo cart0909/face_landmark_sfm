@@ -43,6 +43,8 @@ void FaceSfm::Process(const std::vector<cv::Mat>& v_img, const std::vector<std::
 }
 
 void FaceSfm::InitGraph() {
+    frames[0].Twc.so3() = Sophus::SO3d::rotX(-M_PI/2);
+
     // find the frame of biggest pixel movement from the first frame
     int best_frame_idx = -1;
     double best_dx_ave = -1;
@@ -61,48 +63,54 @@ void FaceSfm::InitGraph() {
     }
 
     // essential matrix and recover pose
-    {
-        std::vector<cv::Point2d> point1, point2;
-        cv::Mat K = cv::Mat::eye(3, 3, CV_64F) * camera->f();
-        for(int i = 0; i < landmarks.size(); ++i) {
-            point1.emplace_back(landmarks[i].pt_n_per_frame[0](0) * camera->f(),
-                                landmarks[i].pt_n_per_frame[0](1) * camera->f());
-            point2.emplace_back(landmarks[i].pt_n_per_frame[best_frame_idx](0) * camera->f(),
-                                landmarks[i].pt_n_per_frame[best_frame_idx](1) * camera->f());
-        }
-        cv::Mat mask;
-        cv::Mat E = cv::findEssentialMat(point1, point2, K, cv::RANSAC, 0.999, 1.0, mask);
-        cv::Mat R, t; // R10, t10
-        cv::recoverPose(E, point1, point2, K, R, t, mask);
-        Eigen::Matrix3d R10;
-        Eigen::Vector3d t10;
-        cv::cv2eigen(R, R10);
-        cv::cv2eigen(t, t10);
-        Sophus::SE3d T10(R10, t10);
-        frames[best_frame_idx].Twc = frames[0].Twc * T10.inverse();
-    }
+//    {
+//        std::vector<cv::Point2d> point1, point2;
+//        cv::Mat K = cv::Mat::eye(3, 3, CV_64F) * camera->f();
+//        for(int i = 0; i < landmarks.size(); ++i) {
+//            point1.emplace_back(landmarks[i].pt_n_per_frame[0](0) * camera->f(),
+//                                landmarks[i].pt_n_per_frame[0](1) * camera->f());
+//            point2.emplace_back(landmarks[i].pt_n_per_frame[best_frame_idx](0) * camera->f(),
+//                                landmarks[i].pt_n_per_frame[best_frame_idx](1) * camera->f());
+//        }
+//        cv::Mat mask;
+//        cv::Mat E = cv::findEssentialMat(point1, point2, K, cv::RANSAC, 0.999, 1.0, mask);
+//        cv::Mat R, t; // R10, t10
+//        cv::recoverPose(E, point1, point2, K, R, t, mask);
+//        Eigen::Matrix3d R10;
+//        Eigen::Vector3d t10;
+//        cv::cv2eigen(R, R10);
+//        cv::cv2eigen(t, t10);
+//        Sophus::SE3d T10(R10, t10);
+//        frames[best_frame_idx].Twc = frames[0].Twc * T10.inverse();
+//    }
 
     // triangulation
     {
-        int iter_idx[2] = {0, best_frame_idx};
-        Sophus::SE3d Tcw[2] = {frames[0].Twc.inverse(), frames[best_frame_idx].Twc.inverse()};
-        Eigen::Matrix<double, 3, 4> P[2];
-        P[0] << Tcw[0].so3().matrix(), Tcw[0].translation();
-        P[1] << Tcw[1].so3().matrix(), Tcw[1].translation();
+//        int iter_idx[2] = {0, best_frame_idx};
+//        Sophus::SE3d Tcw[2] = {frames[0].Twc.inverse(), frames[best_frame_idx].Twc.inverse()};
+//        Eigen::Matrix<double, 3, 4> P[2];
+//        P[0] << Tcw[0].so3().matrix(), Tcw[0].translation();
+//        P[1] << Tcw[1].so3().matrix(), Tcw[1].translation();
 
+//        for(auto& lm : landmarks) {
+//            Eigen::Matrix4d A;
+//            for(int i = 0; i < 2; ++i) {
+//                int frame_idx = iter_idx[i];
+//                Eigen::Vector3d& pt_j = lm.pt_n_per_frame[frame_idx];
+//                A.col(2 * i)     = pt_j(0) * P[i].row(2) - P[i].row(0);
+//                A.col(2 * i + 1) = pt_j(1) * P[i].row(2) - P[i].row(1);
+//            }
+
+//            Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinV);
+//            Eigen::Vector4d x = svd.matrixV().rightCols(1);
+//            Eigen::Vector3d x3Dw = x.head<3>() / x(3);
+//            lm.x3Dw = x3Dw;
+//        }
+
+        // simple set the distance of landmarks is front of first pose in 1 m
         for(auto& lm : landmarks) {
-            Eigen::Matrix4d A;
-            for(int i = 0; i < 2; ++i) {
-                int frame_idx = iter_idx[i];
-                Eigen::Vector3d& pt_j = lm.pt_n_per_frame[frame_idx];
-                A.col(2 * i)     = pt_j(0) * P[i].row(2) - P[i].row(0);
-                A.col(2 * i + 1) = pt_j(1) * P[i].row(2) - P[i].row(1);
-            }
-
-            Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinV);
-            Eigen::Vector4d x = svd.matrixV().rightCols(1);
-            Eigen::Vector3d x3Dw = x.head<3>() / x(3);
-            lm.x3Dw = x3Dw;
+            Eigen::Vector3d x3Dc = lm.pt_n_per_frame[0] * 5;
+            lm.x3Dw = frames[0].Twc * x3Dc;
         }
     }
 
@@ -114,8 +122,8 @@ void FaceSfm::InitGraph() {
         }
 
         for(int i = 1; i < frames.size(); ++i) {
-            if(i == best_frame_idx)
-                continue;
+//            if(i == best_frame_idx)
+//                continue;
 
             std::vector<cv::Point2d> image_points;
             cv::Mat K = cv::Mat::eye(3, 3, CV_64F), rvec, tvec;
@@ -170,7 +178,8 @@ void FaceSfm::GlobalBA() {
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-    options.num_threads = 1;
+    options.max_num_iterations = 50;
+    options.num_threads = 6;
     ceres::Solver::Summary summary;
     LOG(WARNING) << "Solve...";
     ceres::Solve(options, &problem, &summary);
@@ -178,10 +187,10 @@ void FaceSfm::GlobalBA() {
     LOG(INFO) << summary.FullReport() << std::endl;
 
     for(int i = 0, n = frames.size(); i < n; ++i)
-        std::memcpy(frames[i].Twc.data(), para_pose + 7 * i, sizeof(double));
+        std::memcpy(frames[i].Twc.data(), para_pose + 7 * i, sizeof(double) * 7);
 
     for(int i = 0, n = landmarks.size(); i < n; ++i)
-        std::memcpy(landmarks[i].x3Dw.data(), para_landmark + 3 * i, sizeof(double));
+        std::memcpy(landmarks[i].x3Dw.data(), para_landmark + 3 * i, sizeof(double) * 3);
 
     // release
     delete [] para_pose;

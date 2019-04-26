@@ -1,10 +1,12 @@
 #include <vector>
 #include <memory>
+#include <thread>
 #include <Eigen/Dense>
 #include <opencv2/opencv.hpp>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
@@ -14,8 +16,9 @@
 
 class DataMgr {
 public:
-    DataMgr(const ros::NodeHandle& nh) {
+    DataMgr(ros::NodeHandle& nh) {
         ReadParam(nh);
+        pub_face = nh.advertise<sensor_msgs::PointCloud>("/face", 1000);
     }
 
     void ReadParam(const ros::NodeHandle& nh) {
@@ -49,7 +52,19 @@ public:
     };
 
     void Process() {
-         face_sfm->Process(v_img, v_landmarks);
+        face_sfm->Process(v_img, v_landmarks);
+        sensor_msgs::PointCloud face_msg;
+        face_msg.header.frame_id = "world";
+
+        for(auto& lm : face_sfm->landmarks) {
+            geometry_msgs::Point32 pt;
+            pt.x = lm.x3Dw(0);
+            pt.y = lm.x3Dw(1);
+            pt.z = lm.x3Dw(2);
+            face_msg.points.emplace_back(pt);
+        }
+
+        pub_face.publish(face_msg);
     }
 
     std::vector<cv::Mat> v_img;
@@ -57,6 +72,7 @@ public:
     double fx, fy, cx, cy, k1, k2, p1, p2;
     int width, height;
     std::shared_ptr<FaceSfm> face_sfm;
+    ros::Publisher pub_face;
 };
 
 template <class T>
@@ -69,7 +85,7 @@ public:
 };
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "face_landmark_sfm_node");
+    ros::init(argc, argv, "face_landmark_sfm_node", ros::init_options::NoSigintHandler);
     ros::NodeHandle nh("~");
     DataMgr data_mgr(nh);
 
