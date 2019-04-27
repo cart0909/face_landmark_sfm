@@ -53,18 +53,21 @@ public:
 
     void Process() {
         face_sfm->Process(v_img, v_landmarks);
-        sensor_msgs::PointCloud face_msg;
-        face_msg.header.frame_id = "world";
+        while(1) {
+            sensor_msgs::PointCloud face_msg;
+            face_msg.header.frame_id = "world";
 
-        for(auto& lm : face_sfm->landmarks) {
-            geometry_msgs::Point32 pt;
-            pt.x = lm.x3Dw(0);
-            pt.y = lm.x3Dw(1);
-            pt.z = lm.x3Dw(2);
-            face_msg.points.emplace_back(pt);
+            for(auto& lm : face_sfm->landmarks) {
+                geometry_msgs::Point32 pt;
+                pt.x = lm.x3Dw(0);
+                pt.y = lm.x3Dw(1);
+                pt.z = lm.x3Dw(2);
+                face_msg.points.emplace_back(pt);
+            }
+
+            pub_face.publish(face_msg);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-
-        pub_face.publish(face_msg);
     }
 
     std::vector<cv::Mat> v_img;

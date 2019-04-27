@@ -33,8 +33,11 @@ void FaceSfm::Process(const std::vector<cv::Mat>& v_img, const std::vector<std::
             Eigen::Vector3d pt_n = camera->BackProject(v_landmarks[i][j]);
             frame.lm_pt_n.emplace_back(pt_n);
             landmarks[j].pt_n_per_frame.emplace_back(pt_n);
+//            cv::circle(frame.img, cv::Point(v_landmarks[i][j](0), v_landmarks[i][j](1)), 2, cv::Scalar(0, 255, 0), -1);
         }
 
+//        cv::imshow("face", frame.img);
+//        cv::waitKey(0);
         frames.emplace_back(frame);
     }
 
@@ -97,8 +100,8 @@ void FaceSfm::InitGraph() {
 //            for(int i = 0; i < 2; ++i) {
 //                int frame_idx = iter_idx[i];
 //                Eigen::Vector3d& pt_j = lm.pt_n_per_frame[frame_idx];
-//                A.col(2 * i)     = pt_j(0) * P[i].row(2) - P[i].row(0);
-//                A.col(2 * i + 1) = pt_j(1) * P[i].row(2) - P[i].row(1);
+//                A.row(2 * i)     = pt_j(0) * P[i].row(2) - P[i].row(0);
+//                A.row(2 * i + 1) = pt_j(1) * P[i].row(2) - P[i].row(1);
 //            }
 
 //            Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinV);
