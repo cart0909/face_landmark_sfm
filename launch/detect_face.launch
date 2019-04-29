@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<launch>
+    <node name="face_landmark_sfm" pkg="face_landmark_sfm" type="detect_face_landmark.py" output="screen"/>
+</launch>
